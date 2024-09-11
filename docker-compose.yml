@@ -1,0 +1,43 @@
+name: rgvpn-node
+
+services:
+  rgvpn-node-postgres:
+    image: postgres:16.4
+    environment:
+      POSTGRES_PORT: ${PG_PORT:-5432}
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-mysecretpassword}
+      POSTGRES_DB: ${PG_DATABASE:-postgres}
+    ports:
+      - "${PG_PORT:-5432}:${PG_PORT:-5432}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rgvpn-node
+    command: -p ${PG_PORT:-5432}
+  rgvpn-node-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # - NODE_ENV=production
+      - NODE_ENV=development
+    command: npm run start:dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - rgvpn-node-postgres
+    ports:
+      - "${PORT:-1344}:${PORT:-1344}"
+    networks:
+      - rgvpn-node
+
+volumes:
+  postgres_data:
+
+networks:
+  rgvpn-node:
+    name: pvpn
+    driver: bridge
+    external: true
